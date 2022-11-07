@@ -74,4 +74,22 @@ app.get("/services", async (req, res) => {
   }
 });
 
+// individual service get
+
+app.get("/service/:id", async (req, res) => {
+  const id = req.params.id;
+  try {
+    const service = await serviceCollection.findOne({ _id: ObjectId(id) });
+    res.send({
+      success: "true",
+      message: "Successfully got the data",
+      data: service,
+    });
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
 app.listen(port, () => console.log(`server running on ${port}`));
