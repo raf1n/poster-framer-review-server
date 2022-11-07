@@ -55,4 +55,23 @@ app.post("/services", async (req, res) => {
   }
 });
 
+// service get
+app.get("/services", async (req, res) => {
+  try {
+    const query = {};
+    const cursor = serviceCollection.find(query);
+    const services = await cursor.toArray();
+    res.send({
+      success: true,
+      message: "Successfully got data",
+      data: services,
+    });
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 app.listen(port, () => console.log(`server running on ${port}`));
