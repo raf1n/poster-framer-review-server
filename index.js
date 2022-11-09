@@ -4,6 +4,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
 // middleware
 app.use(cors());
@@ -20,6 +21,26 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
+//  jwt function
+
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+
+  jwt.verify(token, process.env.SECRET_TOKEN, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+
 async function posterFramerDbConnect() {
   try {
     await client.connect();
@@ -29,6 +50,15 @@ async function posterFramerDbConnect() {
   }
 }
 posterFramerDbConnect();
+
+// jwt endpoint
+app.post("/jwt", (req, res) => {
+  const user = req.body;
+  const token = jwt.sign(user, process.env.SECRET_TOKEN, {
+    expiresIn: "1d",
+  });
+  res.send({ token });
+});
 
 const serviceCollection = client.db("posterFramer").collection("services");
 const reviewCollection = client.db("posterFramer").collection("reviews");
@@ -106,7 +136,7 @@ app.get("/service/:id", async (req, res) => {
 
 // add review
 
-app.post("/add-review", async (req, res) => {
+app.post("/add-review", verifyJWT, async (req, res) => {
   try {
     const review = req.body;
     const date = new Date();
@@ -134,7 +164,7 @@ app.post("/add-review", async (req, res) => {
 
 // get individual review
 
-app.get("/reviews/:id", async (req, res) => {
+app.get("/reviews/:id", verifyJWT, async (req, res) => {
   const id = req.params.id;
   try {
     const review = await reviewCollection.findOne({ _id: ObjectId(id) });
@@ -171,7 +201,7 @@ app.get("/review", async (req, res) => {
   }
 });
 //  get own review
-app.get("/myreview", async (req, res) => {
+app.get("/myreview", verifyJWT, async (req, res) => {
   try {
     let query = {};
     if (req.query.email) {
@@ -195,7 +225,7 @@ app.get("/myreview", async (req, res) => {
 
 // delete particular review
 
-app.delete("/review/:id", async (req, res) => {
+app.delete("/review/:id", verifyJWT, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await reviewCollection.deleteOne({ _id: ObjectId(id) });
@@ -215,7 +245,9 @@ app.delete("/review/:id", async (req, res) => {
   }
 });
 
-app.patch("/edit-review/:id", async (req, res) => {
+// edit and update review
+
+app.patch("/edit-review/:id", verifyJWT, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await reviewCollection.updateOne(
