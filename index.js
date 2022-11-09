@@ -104,6 +104,77 @@ app.get("/service/:id", async (req, res) => {
   }
 });
 
+// add review
+
+app.post("/add-review", async (req, res) => {
+  try {
+    const review = req.body;
+    const date = new Date();
+    reviewWithDate = { ...review, date };
+    const result = await reviewCollection.insertOne(reviewWithDate);
+
+    if (result.insertedId) {
+      res.send({
+        success: true,
+        message: `Successfully Added your review`,
+      });
+    } else {
+      res.send({
+        success: false,
+        error: "Couldn't Post your Review",
+      });
+    }
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// review according to service
+app.get("/review", async (req, res) => {
+  try {
+    const query = {
+      s_id: req.query.s_id,
+    };
+    const cursor = reviewCollection.find(query).sort({ date: -1 });
+    const reviewQ = await cursor.toArray();
+    res.send({
+      success: true,
+      data: reviewQ,
+    });
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+//  get own review
+app.get("/review/myreview", async (req, res) => {
+  try {
+    let query = {};
+    if (req.query.email) {
+      query = {
+        r_email: req.query.email,
+      };
+    }
+    const cursor = reviewCollection.find(query).sort({ date: -1 });
+    const review = await cursor.toArray();
+    console.log(review);
+    res.send({
+      success: true,
+      data: review,
+    });
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 // query with value
 
 app.get("/service", async (req, res) => {
