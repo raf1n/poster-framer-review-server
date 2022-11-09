@@ -38,7 +38,9 @@ const reviewCollection = client.db("posterFramer").collection("reviews");
 app.post("/service/add-service", async (req, res) => {
   try {
     const service = req.body;
-    const result = await serviceCollection.insertOne(service);
+    const date = new Date();
+    serviceWithDate = { ...service, date };
+    const result = await serviceCollection.insertOne(serviceWithDate);
 
     if (result.insertedId) {
       res.send({
@@ -63,9 +65,12 @@ app.post("/service/add-service", async (req, res) => {
 app.get("/services", async (req, res) => {
   try {
     const query = {};
-    const cursorWithLimit = serviceCollection.find(query).limit(3);
+    const cursorWithLimit = serviceCollection
+      .find(query)
+      .sort({ date: -1 })
+      .limit(3);
     const servicesWithLimit = await cursorWithLimit.toArray();
-    const cursor = serviceCollection.find(query);
+    const cursor = serviceCollection.find(query).sort({ date: -1 });
     const services = await cursor.toArray();
     res.send({
       success: true,
