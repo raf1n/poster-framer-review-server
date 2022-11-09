@@ -132,6 +132,25 @@ app.post("/add-review", async (req, res) => {
   }
 });
 
+// get individual review
+
+app.get("/reviews/:id", async (req, res) => {
+  const id = req.params.id;
+  try {
+    const review = await reviewCollection.findOne({ _id: ObjectId(id) });
+    res.send({
+      success: "true",
+      message: "Successfully got the data",
+      data: review,
+    });
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
 // review according to service
 app.get("/review", async (req, res) => {
   try {
@@ -152,7 +171,7 @@ app.get("/review", async (req, res) => {
   }
 });
 //  get own review
-app.get("/review/myreview", async (req, res) => {
+app.get("/myreview", async (req, res) => {
   try {
     let query = {};
     if (req.query.email) {
@@ -162,7 +181,6 @@ app.get("/review/myreview", async (req, res) => {
     }
     const cursor = reviewCollection.find(query).sort({ date: -1 });
     const review = await cursor.toArray();
-    console.log(review);
     res.send({
       success: true,
       data: review,
@@ -179,7 +197,6 @@ app.get("/review/myreview", async (req, res) => {
 
 app.delete("/review/:id", async (req, res) => {
   const { id } = req.params;
-
   try {
     const result = await reviewCollection.deleteOne({ _id: ObjectId(id) });
 
@@ -189,6 +206,36 @@ app.delete("/review/:id", async (req, res) => {
         message: "Successfully Deleted",
       });
     } else {
+    }
+  } catch (error) {
+    res.send({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+app.patch("/edit-review/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await reviewCollection.updateOne(
+      { _id: ObjectId(id) },
+      {
+        $set: {
+          review: req.body.review,
+        },
+      }
+    );
+    if (result.matchedCount) {
+      res.send({
+        success: true,
+        message: `successfully updated`,
+      });
+    } else {
+      res.send({
+        success: false,
+        error: "Couldn't update",
+      });
     }
   } catch (error) {
     res.send({
