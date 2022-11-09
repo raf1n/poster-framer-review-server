@@ -175,19 +175,21 @@ app.get("/review/myreview", async (req, res) => {
   }
 });
 
-// query with value
+// delete particular review
 
-app.get("/service", async (req, res) => {
+app.delete("/review/:id", async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const query = {
-      name: req.query.name,
-    };
-    const cursor = serviceCollection.find(query);
-    const serviceQ = await cursor.toArray();
-    res.send({
-      success: true,
-      data: serviceQ,
-    });
+    const result = await reviewCollection.deleteOne({ _id: ObjectId(id) });
+
+    if (result.deletedCount) {
+      res.send({
+        success: true,
+        message: "Successfully Deleted",
+      });
+    } else {
+    }
   } catch (error) {
     res.send({
       success: false,
